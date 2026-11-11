@@ -1,0 +1,8 @@
+node_modules
+dist
+# Generados automáticamente
+public/galeria
+public/draco
+*.log
+.DS_Store
+Thumbs.db

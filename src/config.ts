@@ -1,5 +1,7 @@
 // Parámetros de ajuste del museo. Todo lo "tocable" está aquí.
 
+export const TITULO_MUSEO = 'Museo de nuestros recuerdos'
+
 const coarse = typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches
 
 /** Dispositivo táctil (móvil / tablet): joystick visible y materiales más ligeros. */
@@ -41,16 +43,28 @@ export const INTERACCION = {
 
 export const SALA = {
   ancho: 10,
-  fondo: 12,
+  fondoMin: 12, // la sala se alarga sola si hay más fotos de las que caben
   alto: 4.2,
   grosor: 0.3,
   puerta: 2.6,
   altoPuerta: 3.0,
   alturaCuadros: 1.72, // centro de los cuadros
-  altoMaxCuadro: 1.25,
+  altoMaxCuadro: 1.45,
   anchoMaxCuadro: 1.75,
+  pasoCuadros: 2.5, // metros de pared por cuadro en las paredes largas
   margenEsquina: 1.25,
-  minCuadros: 6, // si hay menos fotos se rellenan con cuadros provisionales
+  cuadrosProvisionales: 6, // solo en salas que aún no tienen ninguna foto
+}
+
+/**
+ * Vestíbulo: una galería con las salas a los lados y una al fondo. Su largo crece con el número de salas.
+ */
+export const VESTIBULO = {
+  ancho: 14,
+  largoMin: 14,
+  alto: 5.6,
+  pasoSalas: 12, // distancia entre puertas del mismo lado (cada sala mide 10 m + paredes)
+  margen: 1,
 }
 
 export interface Tema {
@@ -96,8 +110,25 @@ export const TEMAS: Tema[] = [
     provisional: ['#f0caa6', '#c47d58'],
     alfombra: ['#405a43', '#ead8b4', '#22331f'],
   },
+  {
+    pared: '#7a6283',
+    zocalo: '#f2eae2',
+    marco: '#2f2228',
+    titulo: '#f7ecf2',
+    provisional: ['#dcc7e0', '#8f7397'],
+    alfombra: ['#b07a3c', '#f0dcb4', '#5c3a17'],
+  },
+  {
+    pared: '#b8923f',
+    zocalo: '#f5ecdc',
+    marco: '#3a2a16',
+    titulo: '#fff6e4',
+    provisional: ['#f1dca6', '#c39a4c'],
+    alfombra: ['#5b3a52', '#ecd7b8', '#2e1d2a'],
+  },
 ]
 
-export const temaDeAnio = (anio: number) => TEMAS[(anio - 1 + TEMAS.length) % TEMAS.length]
+/** Tema de la sala `orden` (1, 2, 3…). Si hay más salas que temas, se repiten. */
+export const temaDeSala = (orden: number) => TEMAS[(orden - 1 + TEMAS.length) % TEMAS.length]
 
 export const URL_BASE = import.meta.env.BASE_URL

@@ -21,7 +21,20 @@ export interface Caja {
   jugador?: boolean
 }
 
+/** Obstáculo redondo (pedestales...). Solo afecta al jugador; la cámara lo ignora. */
+export interface Cilindro {
+  x: number
+  z: number
+  radio: number
+}
+
 const cajas = new Set<Caja>()
+const cilindros = new Set<Cilindro>()
+
+export function registrarCilindros(lista: Cilindro[]) {
+  lista.forEach((c) => cilindros.add(c))
+  return () => lista.forEach((c) => cilindros.delete(c))
+}
 
 /** Caja a partir de centro y tamaño. */
 export function caja(
@@ -99,6 +112,21 @@ export function resolverCirculo(p: Vector3, radio: number) {
         else if (m === der) p.x = c.maxX + radio
         else if (m === atr) p.z = c.minZ - radio
         else p.z = c.maxZ + radio
+      }
+      corregido = true
+    }
+    for (const c of cilindros) {
+      const dx = p.x - c.x
+      const dz = p.z - c.z
+      const minimo = radio + c.radio
+      const d2 = dx * dx + dz * dz
+      if (d2 >= minimo * minimo) continue
+      const d = Math.sqrt(d2)
+      if (d > 1e-6) {
+        p.x = c.x + (dx / d) * minimo
+        p.z = c.z + (dz / d) * minimo
+      } else {
+        p.z = c.z + minimo
       }
       corregido = true
     }

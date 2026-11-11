@@ -1,8 +1,11 @@
 // Procesa las fotos de /imagenes y genera versiones optimizadas para la web en /public/galeria.
 //
-//   imagenes/año 1/*.jpg  ──►  public/galeria/anio1/<nombre>-pared.webp   (textura del cuadro, ligera)
-//                              public/galeria/anio1/<nombre>-visor.webp   (vista ampliada, nítida)
-//                              public/galeria/manifest.json               (lo que lee la web)
+//   imagenes/2022/*.jpg  ──►  public/galeria/2022/<nombre>-pared.webp   (textura del cuadro, ligera)
+//                             public/galeria/2022/<nombre>-visor.webp   (vista ampliada, nítida)
+//                             public/galeria/manifest.json              (lo que lee la web)
+//
+// Cada subcarpeta de /imagenes es una sala del museo, en orden de nombre (2022, 2023…). Las carpetas que
+// empiezan por "_" o "." se ignoran (p. ej. "_descartes").
 //
 // Se ejecuta solo al arrancar `npm run dev` / `npm run build` (plugin de Vite) y cada vez que
 // cambia algo en /imagenes mientras el servidor de desarrollo está abierto.
@@ -23,9 +26,6 @@ const TAM_VISOR = 1600
 const CALIDAD = 82
 /** Súbelo si cambias tamaños/calidad para forzar que se regeneren todas. */
 const VERSION = 1
-
-// "año 1", "año1", "ano 2", "anio_3", "Año-4"...
-const RE_ANIO = /^a(?:ñ|n|ni|nn|ny)o\s*[-_]?\s*(\d+)$/i
 
 const clave = (nombre) => nombre.normalize('NFC').trim().toLowerCase()
 const texto = (v) => (typeof v === 'string' ? v.trim() : '')
@@ -115,15 +115,17 @@ export async function procesarFotos({ raiz = process.cwd(), log = console.log } 
     avisar('No existe la carpeta imagenes/. Se usarán cuadros provisionales.')
   }
 
-  const salas = []
-  for (const carpeta of carpetas) {
-    if (!carpeta.isDirectory()) continue
-    const nombreCarpeta = carpeta.name.normalize('NFC').trim()
-    const coincide = nombreCarpeta.match(RE_ANIO)
-    if (!coincide) continue
+  const directorios = carpetas
+    .filter((c) => c.isDirectory() && !/^[._]/.test(c.name))
+    .sort((a, b) => a.name.localeCompare(b.name, 'es', { numeric: true, sensitivity: 'base' }))
 
-    const anio = Number(coincide[1])
-    const idSala = `anio${anio}`
+  const salas = []
+  const idsUsados = new Set()
+  for (const carpeta of directorios) {
+    const nombreCarpeta = carpeta.name.normalize('NFC').trim()
+    let idSala = slug(nombreCarpeta)
+    for (let i = 2; idsUsados.has(idSala); i++) idSala = `${slug(nombreCarpeta)}-${i}`
+    idsUsados.add(idSala)
     const dirSala = path.join(dirOrigen, carpeta.name)
     const info = (await leerJson(path.join(dirSala, 'info.json'), avisar)) ?? {}
     const buscarTexto = indexarTextos(info.fotos)
@@ -210,14 +212,20 @@ export async function procesarFotos({ raiz = process.cwd(), log = console.log } 
       total++
     }
 
-    salas.push({ id: idSala, anio, titulo: texto(info.titulo), subtitulo: texto(info.subtitulo), fotos })
+    salas.push({
+      id: `sala-${idSala}`,
+      orden: salas.length + 1,
+      carpeta: nombreCarpeta,
+      titulo: texto(info.titulo),
+      subtitulo: texto(info.subtitulo),
+      fotos,
+    })
   }
-  salas.sort((a, b) => a.anio - b.anio)
 
   await limpiar(dirDestino, '', esperados)
 
   const rutaManifest = path.join(dirDestino, 'manifest.json')
-  const manifest = JSON.stringify({ version: 1, salas }, null, 2)
+  const manifest = JSON.stringify({ version: 2, salas }, null, 2)
   const anterior = existsSync(rutaManifest) ? await fs.readFile(rutaManifest, 'utf8') : ''
   if (anterior !== manifest) await fs.writeFile(rutaManifest, manifest)
   await fs.writeFile(rutaCache, JSON.stringify(nuevaCache))

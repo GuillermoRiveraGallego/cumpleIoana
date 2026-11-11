@@ -19,6 +19,8 @@ interface Estado {
   cercano: RefCuadro | null
   /** Cuadro abierto en la vista ampliada. */
   visor: RefCuadro | null
+  /** Dónde está Ioana: 'vestibulo' o el id de una sala ('sala-2022'...). */
+  espacioActual: string | null
 
   setSalas: (salas: Sala[]) => void
   setEscenaLista: () => void
@@ -28,6 +30,7 @@ interface Estado {
   abrirVisor: (c: RefCuadro) => void
   cerrarVisor: () => void
   moverVisor: (delta: number) => void
+  setEspacioActual: (id: string) => void
 }
 
 export const useEstado = create<Estado>()((set, get) => ({
@@ -37,6 +40,7 @@ export const useEstado = create<Estado>()((set, get) => ({
   esTactil: ES_TACTIL,
   cercano: null,
   visor: null,
+  espacioActual: null,
 
   setSalas: (salas) => set({ salas }),
   setEscenaLista: () => set({ escenaLista: true }),
@@ -53,6 +57,7 @@ export const useEstado = create<Estado>()((set, get) => ({
     const indice = (visor.indice + delta + n) % n
     set({ visor: { id: sala.fotos[indice].id, salaId: sala.id, indice } })
   },
+  setEspacioActual: (espacioActual) => set({ espacioActual }),
 }))
 
 /** ¿Deben ignorarse los controles de movimiento/cámara? */

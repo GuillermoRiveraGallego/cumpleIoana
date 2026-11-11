@@ -17,7 +17,8 @@ export interface Foto {
 
 export interface Sala {
   id: string
-  anio: number
+  /** Posición en el recorrido: 1, 2, 3… (orden de las carpetas). */
+  orden: number
   titulo: string
   subtitulo: string
   fotos: Foto[]
@@ -35,21 +36,31 @@ interface FotoManifest {
 }
 
 interface SalaManifest {
-  anio: number
+  id: string
+  carpeta: string
   titulo: string
   subtitulo: string
   fotos: FotoManifest[]
 }
 
-export const NUM_SALAS = 4
+const ORDINALES = ['primer', 'segundo', 'tercer', 'cuarto', 'quinto', 'sexto', 'séptimo', 'octavo', 'noveno', 'décimo']
+const NUMEROS = ['', 'un', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve', 'diez']
 
-const SUBTITULOS = ['Nuestro primer año', 'Nuestro segundo año', 'Nuestro tercer año', 'Nuestro cuarto año']
+/** "Cinco años, cinco salas" */
+export function lemaMuseo(salas: number) {
+  if (salas === 1) return 'Un año, una sala'
+  const n = NUMEROS[salas] ?? String(salas)
+  return `${n.charAt(0).toUpperCase()}${n.slice(1)} años, ${n} salas`
+}
 // Proporciones variadas para que los cuadros provisionales no parezcan clonados.
 const ASPECTOS_PROVISIONALES = [4 / 3, 3 / 4, 4 / 3, 1, 3 / 4, 4 / 3, 3 / 4, 4 / 3]
 
 export const urlRecurso = (ruta: string) => `${URL_BASE}${ruta}`
 
-/** Lee public/galeria/manifest.json (generado a partir de /imagenes) y monta las 4 salas. */
+/**
+ * Lee public/galeria/manifest.json (generado a partir de /imagenes) y monta una sala por carpeta,
+ * en orden. Sin carpetas, el museo tiene una sala provisional.
+ */
 export async function cargarSalas(): Promise<Sala[]> {
   let salas: SalaManifest[] = []
   try {
@@ -58,15 +69,13 @@ export async function cargarSalas(): Promise<Sala[]> {
   } catch {
     // Sin manifest: todo provisional.
   }
-  return Array.from({ length: NUM_SALAS }, (_, i) =>
-    construirSala(
-      i + 1,
-      salas.find((s) => s.anio === i + 1),
-    ),
-  )
+  if (salas.length === 0) return [construirSala(1)]
+  return salas.map((s, i) => construirSala(i + 1, s))
 }
 
-function construirSala(anio: number, datos?: SalaManifest): Sala {
+function construirSala(orden: number, datos?: SalaManifest): Sala {
+  const id = datos?.id ?? `sala-${orden}`
+  const nombre = datos?.carpeta ?? `Sala ${orden}`
   const fotos: Foto[] = (datos?.fotos ?? []).map((f, i) => ({
     id: f.id,
     indice: i,
@@ -79,14 +88,15 @@ function construirSala(anio: number, datos?: SalaManifest): Sala {
     provisional: false,
   }))
 
-  while (fotos.length < SALA.minCuadros) {
-    const i = fotos.length
+  // Tantos cuadros como fotos. Solo una sala todavía vacía se rellena con provisionales.
+  const provisionales = fotos.length === 0 ? SALA.cuadrosProvisionales : 0
+  for (let i = 0; i < provisionales; i++) {
     fotos.push({
-      id: `anio${anio}-provisional-${i + 1}`,
+      id: `${id}-provisional-${i + 1}`,
       indice: i,
       titulo: `Recuerdo ${i + 1}`,
       fecha: 'Próximamente',
-      descripcion: `Aquí irá una de nuestras fotos del año ${anio}.`,
+      descripcion: 'Aquí irá uno de nuestros recuerdos.',
       pared: null,
       visor: null,
       aspecto: ASPECTOS_PROVISIONALES[i % ASPECTOS_PROVISIONALES.length],
@@ -95,10 +105,10 @@ function construirSala(anio: number, datos?: SalaManifest): Sala {
   }
 
   return {
-    id: `anio${anio}`,
-    anio,
-    titulo: datos?.titulo || `Año ${anio}`,
-    subtitulo: datos?.subtitulo || SUBTITULOS[anio - 1] || '',
+    id,
+    orden,
+    titulo: datos?.titulo || nombre.charAt(0).toUpperCase() + nombre.slice(1),
+    subtitulo: datos?.subtitulo || (ORDINALES[orden - 1] ? `Nuestro ${ORDINALES[orden - 1]} año` : ''),
     fotos,
   }
 }

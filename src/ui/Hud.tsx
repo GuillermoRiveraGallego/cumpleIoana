@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react'
+import { TITULO_MUSEO } from '../config'
 import { useEstado } from '../estado'
+import { lemaMuseo } from '../galeria/datos'
+import { ID_VESTIBULO } from '../mundo/espacios'
 import { ListaControles } from './Ayuda'
 import { IconoAyuda, IconoCerrar, IconoOjo, IconoPantallaCompleta, IconoSalirPantallaCompleta } from './Iconos'
 import { alternarPantallaCompleta, pantallaCompletaDisponible } from './pantallaCompleta'
@@ -12,17 +15,28 @@ export function Hud() {
   const visor = useEstado((s) => s.visor)
   const esTactil = useEstado((s) => s.esTactil)
   const abrirVisor = useEstado((s) => s.abrirVisor)
+  const espacioActual = useEstado((s) => s.espacioActual)
   const [ayuda, setAyuda] = useState(false)
-  const [aviso, setAviso] = useState(false)
+  const [aviso, setAviso] = useState<{ antetitulo: string; titulo: string; subtitulo: string } | null>(null)
+  const [avisoVisible, setAvisoVisible] = useState(false)
   const [completa, setCompleta] = useState(false)
 
-  // Rótulo de la sala al entrar (en la fase 2 saltará al cambiar de sala).
+  // Rótulo al entrar en el museo y cada vez que Ioana cambia de sala.
   useEffect(() => {
-    if (fase !== 'jugando') return
-    setAviso(true)
-    const t = setTimeout(() => setAviso(false), 3800)
+    if (fase !== 'jugando' || !espacioActual) return
+    const salas = useEstado.getState().salas ?? []
+    const sala = salas.find((s) => s.id === espacioActual)
+    if (espacioActual === ID_VESTIBULO) {
+      setAviso({ antetitulo: 'Bienvenida', titulo: TITULO_MUSEO, subtitulo: lemaMuseo(salas.length) })
+    } else if (sala) {
+      setAviso({ antetitulo: 'Sala', titulo: sala.titulo, subtitulo: sala.subtitulo })
+    } else {
+      return
+    }
+    setAvisoVisible(true)
+    const t = setTimeout(() => setAvisoVisible(false), 3800)
     return () => clearTimeout(t)
-  }, [fase])
+  }, [fase, espacioActual])
 
   useEffect(() => {
     const f = () => setCompleta(!!document.fullscreenElement)
@@ -32,16 +46,15 @@ export function Hud() {
 
   if (fase !== 'jugando') return null
 
-  const sala = salas?.[0]
   const foto = cercano ? salas?.find((s) => s.id === cercano.salaId)?.fotos[cercano.indice] : undefined
 
   return (
     <div className="hud">
-      {sala && (
-        <div className={`hud-aviso ${aviso ? 'visible' : ''}`} aria-live="polite">
-          <small>Sala</small>
-          <strong>{sala.titulo}</strong>
-          <span>{sala.subtitulo}</span>
+      {aviso && (
+        <div className={`hud-aviso ${avisoVisible ? 'visible' : ''}`} aria-live="polite">
+          <small>{aviso.antetitulo}</small>
+          <strong>{aviso.titulo}</strong>
+          <span>{aviso.subtitulo}</span>
         </div>
       )}
 

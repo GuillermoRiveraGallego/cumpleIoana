@@ -20,6 +20,21 @@ function aTextura(c: HTMLCanvasElement, repetir = false) {
   return t
 }
 
+const cache = new Map<string, CanvasTexture>()
+
+/**
+ * Las texturas iguales en varias salas (parquet, claraboya) se dibujan UNA vez; cada sala recibe una copia
+ * ligera que comparte la imagen en la GPU (y puede tener su propio `repeat`).
+ */
+function compartida(clave: string, crear: () => CanvasTexture) {
+  let base = cache.get(clave)
+  if (!base) {
+    base = crear()
+    cache.set(clave, base)
+  }
+  return base.clone()
+}
+
 function espaciado(ctx: CanvasRenderingContext2D, px: number) {
   if ('letterSpacing' in ctx) (ctx as CanvasRenderingContext2D & { letterSpacing: string }).letterSpacing = `${px}px`
 }
@@ -81,7 +96,9 @@ function tabla(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h
 }
 
 /** Parquet de tablas de roble cálido. Repetible. */
-export function texturaParquet() {
+export const texturaParquet = () => compartida('parquet', crearParquet)
+
+function crearParquet() {
   const S = 1024
   const filas = 8
   const alto = S / filas
@@ -185,29 +202,159 @@ export function texturaDegradadoVertical() {
 
 // ───────────────────────────── Claraboya ─────────────────────────────
 
-export function texturaClaraboya() {
-  const { c, ctx } = lienzo(256, 400)
-  const g = ctx.createRadialGradient(128, 200, 20, 128, 200, 260)
+/** Claraboya con cristales separados por perfiles (`columnas` × `filas`). */
+export const texturaClaraboya = (columnas = 2, filas = 3) =>
+  compartida(`claraboya-${columnas}x${filas}`, () => crearClaraboya(columnas, filas))
+
+function crearClaraboya(columnas: number, filas: number) {
+  const W = 128 * columnas
+  const H = 128 * filas
+  const { c, ctx } = lienzo(W, H)
+  const g = ctx.createRadialGradient(W / 2, H / 2, 20, W / 2, H / 2, Math.max(W, H) * 0.7)
   g.addColorStop(0, '#fffaf0')
   g.addColorStop(1, '#f6e4c8')
   ctx.fillStyle = g
-  ctx.fillRect(0, 0, 256, 400)
+  ctx.fillRect(0, 0, W, H)
   ctx.strokeStyle = '#cbbba6'
   ctx.lineWidth = 6
-  for (const x of [256 / 2]) {
+  for (let i = 1; i < columnas; i++) {
     ctx.beginPath()
-    ctx.moveTo(x, 0)
-    ctx.lineTo(x, 400)
+    ctx.moveTo((W * i) / columnas, 0)
+    ctx.lineTo((W * i) / columnas, H)
     ctx.stroke()
   }
-  for (const y of [400 / 3, (400 * 2) / 3]) {
+  for (let i = 1; i < filas; i++) {
     ctx.beginPath()
-    ctx.moveTo(0, y)
-    ctx.lineTo(256, y)
+    ctx.moveTo(0, (H * i) / filas)
+    ctx.lineTo(W, (H * i) / filas)
     ctx.stroke()
   }
   ctx.lineWidth = 10
-  ctx.strokeRect(0, 0, 256, 400)
+  ctx.strokeRect(0, 0, W, H)
+  return aTextura(c)
+}
+
+// ───────────────────────────── Vestíbulo ─────────────────────────────
+
+/** Losas de mármol crema en damero, con vetas. Una textura = 2 × 2 losas. Repetible. */
+export function texturaMarmol() {
+  const S = 1024
+  const L = S / 2
+  const { c, ctx } = lienzo(S, S)
+  const r = aleatorio(23)
+  const tonos = ['#efe6d8', '#e3d5c1']
+  for (let i = 0; i < 2; i++) {
+    for (let j = 0; j < 2; j++) {
+      const x = i * L
+      const y = j * L
+      ctx.fillStyle = tonos[(i + j) % 2]
+      ctx.fillRect(x, y, L, L)
+      ctx.save()
+      ctx.beginPath()
+      ctx.rect(x, y, L, L)
+      ctx.clip()
+      // Nubes suaves
+      for (let k = 0; k < 6; k++) {
+        const cx = x + r() * L
+        const cy = y + r() * L
+        const rad = 80 + r() * 160
+        const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, rad)
+        g.addColorStop(0, `rgba(${r() < 0.5 ? '255,255,250' : '190,170,150'},${0.12 + r() * 0.1})`)
+        g.addColorStop(1, 'rgba(0,0,0,0)')
+        ctx.fillStyle = g
+        ctx.fillRect(cx - rad, cy - rad, rad * 2, rad * 2)
+      }
+      // Vetas
+      for (let k = 0; k < 4; k++) {
+        ctx.strokeStyle = `rgba(150,128,105,${0.12 + r() * 0.15})`
+        ctx.lineWidth = 0.8 + r() * 1.8
+        ctx.beginPath()
+        let vx = x + r() * L
+        let vy = y
+        ctx.moveTo(vx, vy)
+        while (vy < y + L) {
+          vx += (r() - 0.5) * 40
+          vy += 20 + r() * 30
+          ctx.lineTo(vx, vy)
+        }
+        ctx.stroke()
+      }
+      ctx.restore()
+    }
+  }
+  // Juntas
+  ctx.strokeStyle = 'rgba(120,100,80,0.45)'
+  ctx.lineWidth = 3
+  for (const p of [0, L, S]) {
+    ctx.beginPath()
+    ctx.moveTo(p, 0)
+    ctx.lineTo(p, S)
+    ctx.moveTo(0, p)
+    ctx.lineTo(S, p)
+    ctx.stroke()
+  }
+  return aTextura(c, true)
+}
+
+/** Rosetón circular de taracea para el centro del vestíbulo (fondo transparente). */
+export function texturaRoseton() {
+  const S = 1024
+  const C = S / 2
+  const { c, ctx } = lienzo(S, S)
+  const anillo = (r: number, color: string, ancho: number) => {
+    ctx.strokeStyle = color
+    ctx.lineWidth = ancho
+    ctx.beginPath()
+    ctx.arc(C, C, r, 0, Math.PI * 2)
+    ctx.stroke()
+  }
+  ctx.fillStyle = '#d9c7ad'
+  ctx.beginPath()
+  ctx.arc(C, C, C - 8, 0, Math.PI * 2)
+  ctx.fill()
+  anillo(C - 14, '#8a5a3c', 14)
+  anillo(C - 34, '#c9a46b', 6)
+  anillo(C - 70, '#b5643f', 24)
+  anillo(C - 98, '#c9a46b', 5)
+  // Estrella de 8 puntas
+  const puntas = 8
+  for (let capa = 0; capa < 2; capa++) {
+    const radio = capa === 0 ? C - 120 : C - 200
+    ctx.fillStyle = capa === 0 ? '#a77a4f' : '#efe2cc'
+    ctx.beginPath()
+    for (let i = 0; i < puntas * 2; i++) {
+      const a = (i * Math.PI) / puntas - Math.PI / 2 + (capa * Math.PI) / puntas
+      const rr = i % 2 === 0 ? radio : radio * 0.42
+      ctx.lineTo(C + Math.cos(a) * rr, C + Math.sin(a) * rr)
+    }
+    ctx.closePath()
+    ctx.fill()
+  }
+  ctx.fillStyle = '#b5643f'
+  ctx.beginPath()
+  ctx.arc(C, C, 70, 0, Math.PI * 2)
+  ctx.fill()
+  anillo(70, '#c9a46b', 6)
+  return aTextura(c)
+}
+
+/** Banda de latón con texto que rodea el pedestal (se repite `veces` alrededor). */
+export function texturaBanda(texto: string, veces = 2) {
+  const W = 2048
+  const H = 128
+  const { c, ctx } = lienzo(W, H)
+  const g = ctx.createLinearGradient(0, 0, 0, H)
+  g.addColorStop(0, '#a8834e')
+  g.addColorStop(0.5, '#e2c48e')
+  g.addColorStop(1, '#9c7642')
+  ctx.fillStyle = g
+  ctx.fillRect(0, 0, W, H)
+  ctx.fillStyle = 'rgba(60,35,12,0.85)'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  espaciado(ctx, 10)
+  ctx.font = `700 54px ${SERIF}`
+  for (let i = 0; i < veces; i++) ctx.fillText(`${texto.toUpperCase()}   ♥`, (W * (i + 0.5)) / veces, H / 2 + 3)
   return aTextura(c)
 }
 
@@ -224,16 +371,17 @@ function corazon(ctx: CanvasRenderingContext2D, cx: number, cy: number, s: numbe
 /** Ilustración cálida para los huecos sin foto todavía. `conTexto=false` → solo fondo (mientras carga una foto real). */
 export function texturaProvisional(
   indice: number,
-  anio: number,
+  orden: number,
   aspecto: number,
   [claro, oscuro]: [string, string],
   conTexto = true,
+  etiqueta = '',
 ) {
   const L = 512
   const W = aspecto >= 1 ? L : Math.round(L * aspecto)
   const H = aspecto >= 1 ? Math.round(L / aspecto) : L
   const { c, ctx } = lienzo(W, H)
-  const r = aleatorio(anio * 97 + indice * 13 + 1)
+  const r = aleatorio(orden * 97 + indice * 13 + 1)
 
   const g = ctx.createLinearGradient(0, 0, W * (0.6 + r() * 0.4), H)
   g.addColorStop(0, claro)
@@ -265,7 +413,7 @@ export function texturaProvisional(
     espaciado(ctx, Math.round(m * 0.012))
     ctx.font = `700 ${Math.round(m * 0.045)}px ${SANS}`
     ctx.fillStyle = 'rgba(255,252,248,0.75)'
-    ctx.fillText(`AÑO ${anio}`, W / 2, H * 0.72)
+    ctx.fillText(etiqueta.toUpperCase(), W / 2, H * 0.72)
   }
   return aTextura(c)
 }

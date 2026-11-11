@@ -1,6 +1,7 @@
 import { useProgress } from '@react-three/drei'
 import { useEffect, useState } from 'react'
 import { useEstado } from '../estado'
+import { lemaMuseo } from '../galeria/datos'
 import { ListaControles } from './Ayuda'
 import { IconoCorazon } from './Iconos'
 import { pedirPantallaCompleta } from './pantallaCompleta'
@@ -8,6 +9,7 @@ import { pedirPantallaCompleta } from './pantallaCompleta'
 /** Portada: carga, título y botón para entrar al museo. */
 export function Intro() {
   const lista = useEstado((s) => s.escenaLista)
+  const numSalas = useEstado((s) => s.salas?.length ?? 0)
   const esTactil = useEstado((s) => s.esTactil)
   const entrar = useEstado((s) => s.entrar)
   const { progress } = useProgress()
@@ -41,7 +43,7 @@ export function Intro() {
             <br />
             nuestros recuerdos
           </h1>
-          <p className="intro-sub">Cuatro años, cuatro salas.</p>
+          <p className="intro-sub">{numSalas > 0 ? `${lemaMuseo(numSalas)}.` : ' '}</p>
 
           <button className="boton-principal" onClick={pulsar} disabled={!lista} autoFocus>
             {lista ? 'Entrar' : `Preparando el museo… ${Math.round(progress)}%`}

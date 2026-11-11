@@ -3,8 +3,27 @@
 Web 3D tipo videojuego (React + Three.js + React Three Fiber) para pasear con Ioana por un museo de
 nuestros recuerdos. Está pensada sobre todo para móvil.
 
-**Estado: fase 1 (prototipo).** Incluye el personaje, una sala completa (año 1), la cámara en tercera persona,
-los controles táctiles y de teclado/ratón, las colisiones y la vista ampliada de las fotos.
+**Estado: fase 2 (museo completo).** Hay un vestíbulo en forma de galería y una sala por cada carpeta de
+`imagenes/` (ahora cinco, de 2022 a 2026). Ya funcionan el personaje, la cámara en tercera persona, los controles
+táctiles y de teclado/ratón, las colisiones y la vista ampliada de las fotos.
+
+```
+                       ┌────────┐
+                       │  2024  │
+                       └──┐  ┌──┘
+         ┌────────┐ ┌─────┘  └─────┐ ┌────────┐
+         │  2023  ├─┤              ├─┤  2025  │
+         └────────┘ │  Vestíbulo   │ └────────┘
+         ┌────────┐ │      ♥       │ ┌────────┐
+         │  2022  ├─┤              ├─┤  2026  │
+         └────────┘ └──── ▲ ───────┘ └────────┘
+                        entrada
+```
+
+Empiezas junto a la entrada, donde están la puerta principal y el título del museo, mirando a la galería. El
+recorrido va por la izquierda hacia el fondo y vuelve por la derecha. Sobre cada puerta hay un cartel con el año y,
+al lado, una placa con cuántos recuerdos tiene la sala. Con más o menos años, la galería se alarga o se acorta
+sola.
 
 ## Arrancar
 
@@ -20,22 +39,25 @@ la misma wifi, para probar los controles táctiles.
 
 ## Añadir o cambiar fotos (sin tocar código)
 
-1. Copia las fotos en `imagenes/año 1`, `imagenes/año 2`, `imagenes/año 3` o `imagenes/año 4`.
-   Valen JPG, PNG, WebP, AVIF o TIFF. Las HEIC del iPhone no se pueden leer: expórtalas antes como JPG.
+1. **Cada subcarpeta de `imagenes/` es una sala**, en orden de nombre (`2022`, `2023`…). Para añadir un año, crea
+   su carpeta; las que empiezan por `_` (p. ej. `_descartes`) se ignoran. Valen JPG, PNG, WebP, AVIF o TIFF. Las
+   HEIC del iPhone no se pueden leer: expórtalas antes como JPG.
 2. Ya está. Con `npm run dev` abierto se procesan solas y la página se recarga. Si no está abierto, se procesan
    al arrancar o al hacer `npm run build`. También puedes lanzarlo a mano con `npm run fotos`.
 3. **Orden:** el de `info.json` (ver abajo) o, si no aparecen ahí, el alfabético. Puedes usar prefijos `01_`, `02_`…
-4. **Cantidad:** si hay menos de 6 fotos, los huecos se rellenan con cuadros provisionales. Si hay más, se reparten
-   por las paredes y los cuadros se hacen un poco más pequeños. Cada cuadro toma la proporción de su foto
-   (vertical, horizontal o cuadrada), y las fotos de móvil giradas se enderezan solas (EXIF).
+4. **Cantidad:** hay tantos cuadros como fotos. Si caben, la sala mide 10 × 12 m; si hay más, se alarga sola
+   (unos 2,5 m de pared por cuadro) y añade bancos y claraboyas. Una sala que aún no tiene ninguna foto muestra
+   6 cuadros provisionales. Cada cuadro toma la proporción de su foto (vertical, horizontal o cuadrada), y las
+   fotos de móvil giradas se enderezan solas (EXIF).
 
 ### Títulos y descripciones: `info.json`
 
-Cada carpeta tiene un `info.json`. Las claves de `fotos` son los nombres de archivo, con o sin extensión:
+Cada carpeta puede tener un `info.json` (los de 2022 a 2026 ya están creados con la lista de sus fotos, listos
+para rellenar). Las claves de `fotos` son los nombres de archivo, con o sin extensión:
 
 ```json
 {
-  "titulo": "Año 1",
+  "titulo": "2022",
   "subtitulo": "Donde empezó todo",
   "fotos": {
     "01_playa.jpg": {
@@ -48,7 +70,9 @@ Cada carpeta tiene un `info.json`. Las claves de `fotos` son los nombres de arch
 }
 ```
 
-Todo es opcional: una foto que no esté en `info.json` sale como «Recuerdo N».
+Todo es opcional: una foto sin título sale como «Recuerdo N». Sin `titulo`, la sala se llama como su carpeta, y
+sin `subtitulo` se usa «Nuestro primer año», «Nuestro segundo año»… según el orden. Ambos aparecen en la pared del
+fondo de la sala y en el cartel de su puerta en el vestíbulo.
 
 ### Qué se genera
 
@@ -73,7 +97,7 @@ recoloca poco a poco detrás de Ioana.
 ## Estructura
 
 ```
-imagenes/año N/        ← tus fotos + info.json (lo único que hay que tocar para el contenido)
+imagenes/2022…2026/    ← una carpeta por sala: tus fotos + info.json (lo único que hay que tocar)
 model/                 ← modelos de Ioana (se usa ioana_web_draco.glb)
 scripts/
   procesar-fotos.mjs   ← redimensiona fotos → public/galeria + manifest.json (también es plugin de Vite)
@@ -84,7 +108,12 @@ src/
   App.tsx              ← Canvas + escena + capas de interfaz
   entrada/             ← teclado, joystick virtual y giro de cámara por punteros (multitáctil)
   jugador/             ← Ioana (movimiento, colisión, animación procedural) y cámara en 3ª persona
-  mundo/               ← Sala, Cuadro, decoración, iluminación, colisiones, texturas procedurales
+  mundo/
+    disposicion.ts     ← planta del museo: galería según el nº de salas, tamaño de cada sala y sus cuadros
+    Museo.tsx          ← vestíbulo + una sala por carpeta
+    Vestibulo.tsx, Sala.tsx, Cuadro.tsx, Decoracion.tsx
+    espacios.ts        ← en qué sala estás y qué salas se dibujan (portal culling)
+    colisiones.ts, texturas.ts, geometrias.ts, Iluminacion.tsx
   galeria/datos.ts     ← lee el manifest y rellena con cuadros provisionales
   ui/                  ← portada, HUD, visor de fotos
 ```
@@ -98,7 +127,13 @@ src/
 - **Resolución adaptativa:** como máximo 1.5× en móvil, y baja a 1× si el rendimiento cae (`PerformanceMonitor`).
 - **Personaje:** en móvil, sus materiales «físicos» (sheen/specular) se cambian por estándar, que son más baratos.
 - **Texturas procedurales** (parquet, alfombra, rótulos, cartelas) dibujadas en canvas: no hay descargas extra.
-- **Geometrías compartidas**, y el render se **pausa** mientras la foto ampliada está abierta (ahorra batería).
+- **Solo se dibuja lo que puede verse.** Cada sala es una caja cerrada cuya única abertura es la puerta. Si su puerta
+  no se ve (desde una sala, a través de la puerta de esa sala), la sala no se dibuja (portal culling).
+- **Fotos bajo demanda:** las fotos de una sala se descargan la primera vez que la ves.
+- **Pocas llamadas de dibujo:** las paredes, zócalos y molduras de cada espacio están fusionadas en una sola malla,
+  igual que los marcos, focos, bancos y plantas. Unas 40-70 llamadas por sala y unas 100 en el vestíbulo
+  (incluidas las ~26 del personaje).
+- **Texturas y geometrías compartidas**, y el render se **pausa** mientras la foto ampliada está abierta (ahorra batería).
 
 ## Sobre el modelo de Ioana
 
@@ -109,7 +144,8 @@ por código. Si más adelante se riggea, por ejemplo con Mixamo, se podrán usar
 ## Hoja de ruta
 
 - [x] **Fase 1 — Prototipo:** personaje, una sala, cámara, controles, colisiones e interacción con los cuadros.
-- [ ] **Fase 2 — Museo completo:** vestíbulo central con las 4 salas alrededor. `Sala` ya acepta posición y giro,
-      y el hueco de la puerta existe: la puerta cerrada es provisional. Rótulo al cambiar de sala y carga de
-      texturas por sala.
-- [ ] **Fase 3 — Pulido:** música ambiente, detalles del vestíbulo, pruebas en dispositivos reales.
+- [x] **Fase 2 — Museo completo:** vestíbulo en galería con una sala por carpeta (las 5 de 2022 a 2026), tantos
+      cuadros como fotos (las salas crecen solas), rótulo al cambiar de sala, carga de fotos por sala y dibujado
+      solo de lo visible.
+- [ ] **Fase 3 — Pulido:** música ambiente, versión más ligera del modelo de Ioana para móvil (hoy tiene ~764.000
+      triángulos, con diferencia lo más pesado de la escena) y pruebas en dispositivos reales.

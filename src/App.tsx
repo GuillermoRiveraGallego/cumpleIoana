@@ -1,35 +1,34 @@
 import { PerformanceMonitor } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
-import { Suspense, useEffect, useState } from 'react'
+import { Suspense, useEffect, useMemo, useState } from 'react'
 import { NeutralToneMapping } from 'three'
-import { ES_TACTIL, SALA, temaDeAnio } from './config'
+import { ES_TACTIL } from './config'
 import { CapaControles } from './entrada/CapaControles'
 import { useTeclado } from './entrada/entrada'
 import { useEstado } from './estado'
 import { cargarFuentes, cargarSalas, type Sala as DatosSala } from './galeria/datos'
 import { CamaraTerceraPersona } from './jugador/Camara'
-import { Jugador, type PuntoInicio } from './jugador/Jugador'
+import { Jugador } from './jugador/Jugador'
 import { Iluminacion } from './mundo/Iluminacion'
+import { calcularDisposicion } from './mundo/disposicion'
 import { Interaccion } from './mundo/Interaccion'
-import { Sala } from './mundo/Sala'
+import { Museo } from './mundo/Museo'
 import { Hud } from './ui/Hud'
 import { Intro } from './ui/Intro'
 import { Visor } from './ui/Visor'
-
-// Prototipo (fase 1): una sala. Ioana aparece cerca de la entrada mirando hacia el fondo.
-const INICIO: PuntoInicio = { posicion: [0, 0, SALA.fondo / 2 - 4.5], rotacionY: Math.PI }
 
 function Escena({ salas }: { salas: DatosSala[] }) {
   const setEscenaLista = useEstado((s) => s.setEscenaLista)
   // Se ejecuta cuando todo lo de dentro del <Suspense> (modelo incluido) ya está cargado.
   useEffect(() => setEscenaLista(), [setEscenaLista])
-  const sala = salas[0]
+  // Tamaño y posición de cada sala según sus fotos (ver mundo/disposicion.ts).
+  const disposicion = useMemo(() => calcularDisposicion(salas), [salas])
   return (
     <>
       <color attach="background" args={['#120c09']} />
       <Iluminacion />
-      <Sala sala={sala} tema={temaDeAnio(sala.anio)} />
-      <Jugador inicio={INICIO} />
+      <Museo disposicion={disposicion} />
+      <Jugador inicio={disposicion.inicio} />
       <CamaraTerceraPersona />
       <Interaccion />
     </>
@@ -60,10 +59,11 @@ export default function App() {
         // Con la foto ampliada abierta no hace falta renderizar el museo: ahorra batería.
         frameloop={visorAbierto ? 'never' : 'always'}
         gl={{ antialias: true, powerPreference: 'high-performance', stencil: false }}
-        camera={{ fov: 55, near: 0.1, far: 60, position: [0, 2.5, 6] }}
+        camera={{ fov: 55, near: 0.1, far: 140, position: [0, 2.5, 8] }}
         onCreated={({ gl }) => {
           gl.toneMapping = NeutralToneMapping
           gl.toneMappingExposure = 1.05
+          if (import.meta.env.DEV) Object.assign(window, { __gl: gl })
         }}
       >
         <PerformanceMonitor onDecline={() => setDprMax(1)} onIncline={() => setDprMax(ES_TACTIL ? 1.5 : 2)} flipflops={3} />

@@ -1,5 +1,5 @@
 import { useRef, type PointerEvent as PE } from 'react'
-import { temaDeAnio } from '../config'
+import { temaDeSala } from '../config'
 import { useEstado } from '../estado'
 import { urlRecurso } from '../galeria/datos'
 import { IconoAnterior, IconoCerrar, IconoCorazon, IconoSiguiente } from './Iconos'
@@ -15,7 +15,7 @@ export function Visor() {
   const sala = visor ? salas?.find((s) => s.id === visor.salaId) : undefined
   const foto = visor && sala ? sala.fotos[visor.indice] : undefined
   if (!visor || !sala || !foto) return null
-  const tema = temaDeAnio(sala.anio)
+  const tema = temaDeSala(sala.orden)
 
   // Deslizar a izquierda/derecha para pasar de foto en el móvil.
   const alPulsar = (e: PE) => {
@@ -49,7 +49,7 @@ export function Visor() {
             >
               <IconoCorazon />
               <strong>{foto.titulo}</strong>
-              <small>Año {sala.anio}</small>
+              <small>{sala.titulo}</small>
             </div>
           ) : (
             <img

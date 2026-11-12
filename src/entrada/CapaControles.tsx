@@ -18,6 +18,8 @@ const enZonaJoystick = (x: number, y: number) =>
  */
 export function CapaControles() {
   const esTactil = useEstado((s) => s.esTactil)
+  // Mientras se soplan las velas no se camina: el joystick estorbaría delante de la tarta.
+  const soplando = useEstado((s) => s.velas === 'soplando')
   const capa = useRef<HTMLDivElement>(null)
   const base = useRef<HTMLDivElement>(null)
   const palanca = useRef<HTMLDivElement>(null)
@@ -157,7 +159,7 @@ export function CapaControles() {
   return (
     <div ref={capa} className="capa-controles">
       {esTactil && (
-        <div ref={base} className="joystick" aria-hidden>
+        <div ref={base} className="joystick" aria-hidden style={soplando ? { visibility: 'hidden' } : undefined}>
           <div ref={palanca} className="joystick-palanca" />
         </div>
       )}

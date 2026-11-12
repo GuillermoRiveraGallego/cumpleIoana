@@ -3,9 +3,10 @@
 Web 3D tipo videojuego (React + Three.js + React Three Fiber) para pasear con Ioana por un museo de
 nuestros recuerdos. Está pensada sobre todo para móvil.
 
-**Estado: fase 2 (museo completo).** Hay un vestíbulo en forma de galería y una sala por cada carpeta de
-`imagenes/` (ahora cinco, de 2022 a 2026). Ya funcionan el personaje, la cámara en tercera persona, los controles
-táctiles y de teclado/ratón, las colisiones y la vista ampliada de las fotos.
+**Estado: fase 2 (museo completo).** Hay un vestíbulo en forma de galería, una sala por cada carpeta de
+`imagenes/` (ahora cinco, de 2022 a 2026) y una sala sorpresa de cumpleaños con una tarta. Ya funcionan el
+personaje, la cámara en tercera persona, los controles táctiles y de teclado/ratón, las colisiones y la vista
+ampliada de las fotos.
 
 ```
                        ┌────────┐
@@ -16,14 +17,35 @@ táctiles y de teclado/ratón, las colisiones y la vista ampliada de las fotos.
          └────────┘ │  Vestíbulo   │ └────────┘
          ┌────────┐ │      ♥       │ ┌────────┐
          │  2022  ├─┤              ├─┤  2026  │
-         └────────┘ └──── ▲ ───────┘ └────────┘
-                        entrada
+         └────────┘ └───── ▲ ──────┘ └────────┘
+                       ┌──┘  └──┐
+                       │ Fiesta │  ← sala del cumpleaños (siempre abierta)
+                       └────────┘
 ```
 
 Empiezas junto a la entrada, donde están la puerta principal y el título del museo, mirando a la galería. El
 recorrido va por la izquierda hacia el fondo y vuelve por la derecha. Sobre cada puerta hay un cartel con el año y,
 al lado, una placa con cuántos recuerdos tiene la sala. Con más o menos años, la galería se alarga o se acorta
-sola.
+sola. La puerta principal, a tu espalda al empezar, está abierta de par en par y lleva a la sala del cumpleaños.
+
+## Sala del cumpleaños
+
+Banderines, bombillas, globos, regalos y una mesa con una tarta de dos pisos con velas encendidas. Al acercarte
+aparece **«Soplar las velas»** (o pulsa E, o toca la tarta):
+
+1. Sale el panel «Pide un deseo…». Con **«Soplar al micrófono»**, el navegador pide permiso para usar el micro y
+   basta con soplar al móvil. Cada vela aguanta un poco distinto, así que un soplido corto apaga solo algunas.
+   El medidor muestra la fuerza del soplido y la raya marca a partir de dónde cuenta.
+2. Sin micrófono (o si no da permiso), se sopla **manteniendo pulsado** el botón, o la barra espaciadora en el
+   ordenador.
+3. Al apagarlas todas cae confeti, sale «¡Feliz cumpleaños, Ioana!» y, al rato, se pueden volver a encender.
+
+El micrófono solo funciona con **HTTPS** (GitHub Pages lo es) o en `localhost`. Si abres `npm run dev` desde el
+móvil por la IP de la wifi (`http://192.168…`), el navegador no deja usar el micro y solo sale el botón.
+
+Se ajusta en `CUMPLE`, en `src/config.ts`: el nombre, el **número de velas** (hasta 36), los textos del rótulo y de
+la felicitación, y `umbralSoplidoDb` (bájalo, p. ej. a −36, si cuesta apagarlas; súbelo si se apagan solas al
+hablar). Con `activa: false` vuelve la puerta principal cerrada y desaparece la sala.
 
 ## Arrancar
 
@@ -89,6 +111,7 @@ También se genera `manifest.json`, que es lo que lee la web. Esa carpeta se cre
 | Caminar         | Joystick abajo a la izquierda (aparece bajo el pulgar) | WASD o flechas (Shift para correr)      |
 | Girar la cámara | Deslizar el dedo por cualquier otra zona               | Arrastrar con el ratón · rueda = zoom   |
 | Ver un recuerdo | Botón «Ver recuerdo» o tocar el cuadro                 | E / Enter o clic en el cuadro           |
+| Soplar velas    | «Soplar las velas» o tocar la tarta, y soplar al micro | E o clic en la tarta · Espacio = soplar |
 | En la foto      | Deslizar a los lados · ✕ para cerrar                   | ← → para pasar · Esc para cerrar        |
 
 Puedes caminar y girar la cámara a la vez. El movimiento es relativo a la cámara, y si caminas sin tocarla, se
@@ -106,7 +129,7 @@ src/
   config.ts            ← TODOS los ajustes: velocidades, cámara, tamaños de sala, colores por año…
   estado.ts            ← estado global (zustand): fase, cuadro cercano, visor abierto
   App.tsx              ← Canvas + escena + capas de interfaz
-  entrada/             ← teclado, joystick virtual y giro de cámara por punteros (multitáctil)
+  entrada/             ← teclado, joystick virtual, giro de cámara por punteros (multitáctil) y micrófono (soplido)
   jugador/             ← Ioana (movimiento, colisión, animación procedural) y cámara en 3ª persona
   mundo/
     disposicion.ts     ← planta del museo: galería según el nº de salas, tamaño de cada sala y sus cuadros
@@ -114,8 +137,9 @@ src/
     Vestibulo.tsx, Sala.tsx, Cuadro.tsx, Decoracion.tsx
     espacios.ts        ← en qué sala estás y qué salas se dibujan (portal culling)
     colisiones.ts, texturas.ts, geometrias.ts, Iluminacion.tsx
+    fiesta/            ← sala del cumpleaños: tarta y velas, confeti, globos y banderines
   galeria/datos.ts     ← lee el manifest y rellena con cuadros provisionales
-  ui/                  ← portada, HUD, visor de fotos
+  ui/                  ← portada, HUD, visor de fotos, panel de soplar las velas
 ```
 
 ## Decisiones para que vaya fluido en móvil

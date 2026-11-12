@@ -82,7 +82,7 @@ export function CamaraTerceraPersona() {
 
     // La dirección de la mirada se calcula como si la cámara estuviera a su distancia ideal; así, si una
     // pared la acerca, el encuadre no cambia (solo se acerca), en vez de acabar mirando al techo.
-    mirar.set(0, CAMARA.alturaMirada, 0).addScaledVector(dir, -camara.distancia)
+    mirar.set(0, camara.alturaMirada, 0).addScaledVector(dir, -camara.distancia)
     camera.position.copy(suave).addScaledVector(dir, camara.distanciaActual)
     mirar.add(camera.position)
     camera.lookAt(mirar)

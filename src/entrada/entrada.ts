@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { JUGADOR } from '../config'
 import { useEstado } from '../estado'
+import { soplido } from './microfono'
 
 /**
  * Estado de entrada compartido (mutable, sin re-renders). Lo escriben el teclado y la capa táctil;
@@ -63,7 +64,10 @@ export function leerMovimiento(out: Movimiento): Movimiento {
 /** Enter sobre un botón enfocado ya lo activa el navegador: no lo usamos también para interactuar. */
 const sobreBoton = (e: KeyboardEvent) => (e.target as HTMLElement | null)?.tagName === 'BUTTON'
 
-/** Teclado: WASD/flechas para moverse, Shift para correr, E/Enter para ver un cuadro, Esc para cerrar. */
+/**
+ * Teclado: WASD/flechas para moverse, Shift para correr, E/Enter para ver un cuadro, Esc para cerrar.
+ * Delante de la tarta: mantener la barra espaciadora sopla las velas; Esc deja de soplar.
+ */
 export function useTeclado() {
   useEffect(() => {
     const abajo = (e: KeyboardEvent) => {
@@ -74,6 +78,16 @@ export function useTeclado() {
         else if (e.code === 'ArrowRight' || e.code === 'KeyD') st.moverVisor(1)
         return
       }
+      if (st.velas === 'soplando') {
+        if (e.code === 'Space') {
+          // Sin esto, la barra espaciadora también "pulsaría" el botón que tenga el foco.
+          e.preventDefault()
+          soplido.boton = true
+        } else if (e.code === 'Escape') {
+          st.dejarDeSoplar()
+        }
+        return
+      }
       if (MOVIMIENTO.has(e.code)) {
         entrada.teclas.add(e.code)
         if (e.code.startsWith('Arrow')) e.preventDefault()
@@ -81,8 +95,17 @@ export function useTeclado() {
         entrada.interactuar = true
       }
     }
-    const arriba = (e: KeyboardEvent) => entrada.teclas.delete(e.code)
-    const soltarTodo = () => entrada.teclas.clear()
+    const arriba = (e: KeyboardEvent) => {
+      entrada.teclas.delete(e.code)
+      if (e.code === 'Space' && soplido.boton) {
+        e.preventDefault()
+        soplido.boton = false
+      }
+    }
+    const soltarTodo = () => {
+      entrada.teclas.clear()
+      soplido.boton = false
+    }
 
     window.addEventListener('keydown', abajo)
     window.addEventListener('keyup', arriba)

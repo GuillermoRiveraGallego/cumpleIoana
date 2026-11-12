@@ -1,7 +1,7 @@
 import { useThree } from '@react-three/fiber'
 import { useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import { MeshBasicMaterial, MeshStandardMaterial, type Group } from 'three'
-import { SALA, TITULO_MUSEO, VESTIBULO } from '../config'
+import { CUMPLE, SALA, TITULO_MUSEO, VESTIBULO } from '../config'
 import { lemaMuseo, type Sala as DatosSala } from '../galeria/datos'
 import { caja, registrarCajas, registrarCilindros, transformarCaja, type Caja } from './colisiones'
 import {
@@ -85,13 +85,19 @@ export function Vestibulo({ disposicion }: { disposicion: Disposicion }) {
   const gl = useThree((s) => s.gl)
   const grupo = useRef<Group>(null)
   const numSalas = disposicion.salas.length
+  // Con sala del cumpleaños, la puerta principal (centro de la pared sur) es un hueco abierto hacia ella.
+  const conFiesta = disposicion.fiesta !== null
+  const huecos = useMemo(
+    () => (pared: ParedVestibulo) => [...pared.puertas.map((d) => d.x), ...(conFiesta && pared.lado === 'sur' ? [0] : [])],
+    [conFiesta],
+  )
 
   useLayoutEffect(() => registrarEspacio({ id: ID_VESTIBULO, grupo: grupo.current!, limites }), [limites])
 
   // ── Colisiones ──
   useLayoutEffect(() => {
     const cajas: Caja[] = paredes.flatMap((p) =>
-      tramosPared(p.largo, H, p.puertas.map((d) => d.x), T).map(({ centro, tam }) =>
+      tramosPared(p.largo, H, huecos(p), T).map(({ centro, tam }) =>
         transformarCaja(caja(...centro, ...tam), p.origen, p.giro),
       ),
     )
@@ -106,7 +112,7 @@ export function Vestibulo({ disposicion }: { disposicion: Disposicion }) {
       quitarCajas()
       quitarCilindros()
     }
-  }, [paredes, V, L, H, T])
+  }, [paredes, huecos, V, L, H, T])
 
   // ── Arquitectura fusionada: paredes, frisos, molduras, tiras LED y la puerta principal (3 draw calls) ──
   const arquitectura = useMemo(() => {
@@ -116,7 +122,7 @@ export function Vestibulo({ disposicion }: { disposicion: Disposicion }) {
       const cara = marcoEn(pared.origen, (pared.giro * Math.PI) / 2)
       const pieza = (pos: V3, esc: V3, color: string) => p.estructura.push({ geometria: CAJA, matriz: en(cara, trs(pos, esc)), color })
       const puertas = pared.puertas.map((d) => d.x)
-      for (const { centro, tam } of tramosPared(pared.largo, H, puertas, T)) pieza(centro, tam, COLOR_PARED)
+      for (const { centro, tam } of tramosPared(pared.largo, H, huecos(pared), T)) pieza(centro, tam, COLOR_PARED)
       // La puerta principal (cerrada) va en el centro de la pared de la entrada.
       const huecosDecorados = pared.lado === 'sur' ? [0] : puertas
       for (const [a, b] of tramosLibres(pared.largo, huecosDecorados, P / 2 + 0.14)) {
@@ -125,7 +131,7 @@ export function Vestibulo({ disposicion }: { disposicion: Disposicion }) {
       }
       for (const x of huecosDecorados) piezasMarcoPuerta(p, en(cara, marcoEn([x, 0, 0])), P, HP)
       piezasTiraLed(p, cara, pared.largo, H - 0.32, H)
-      if (pared.lado === 'sur') {
+      if (pared.lado === 'sur' && !conFiesta) {
         // Puerta principal de doble hoja, de nogal, con cuarterones y tiradores de latón.
         for (const s of [-1, 1]) {
           const x = (s * P) / 4
@@ -137,7 +143,7 @@ export function Vestibulo({ disposicion }: { disposicion: Disposicion }) {
       }
     }
     return fusionarArquitectura(p)
-  }, [paredes, H, T, P, HP])
+  }, [paredes, huecos, conFiesta, H, T, P, HP])
   useEffect(() => () => Object.values(arquitectura).forEach((g) => g.dispose()), [arquitectura])
 
   // ── Materiales y texturas ──
@@ -202,6 +208,7 @@ export function Vestibulo({ disposicion }: { disposicion: Disposicion }) {
       {/* Título del museo sobre la puerta principal */}
       <group position={sur.origen} rotation-y={(sur.giro * Math.PI) / 2}>
         <Rotulo titulo={TITULO_MUSEO} subtitulo={lemaMuseo(numSalas)} posicion={[0, HP + 1.15, 0.012]} ancho={7} />
+        {conFiesta && <Cartel position={[P / 2 + 0.95, 1.55, 0.012]} titulo="Sorpresa" linea2={`Para ${CUMPLE.nombre}`} />}
       </group>
 
       <Pedestal texto={TITULO_MUSEO} />

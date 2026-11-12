@@ -20,6 +20,7 @@ export interface Espacio {
 }
 
 export const ID_VESTIBULO = 'vestibulo'
+export const ID_FIESTA = 'fiesta'
 
 const espacios = new Map<string, Espacio>()
 

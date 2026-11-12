@@ -200,6 +200,28 @@ export function texturaDegradadoVertical() {
   return degradadoVertical
 }
 
+let llama: CanvasTexture | null = null
+/** Llama de vela: gota con el núcleo blanco abajo y la punta naranja arriba. Compartida. */
+export function texturaLlama() {
+  if (llama) return llama
+  const { c, ctx } = lienzo(64, 128)
+  ctx.beginPath()
+  ctx.moveTo(32, 4)
+  ctx.bezierCurveTo(44, 40, 56, 68, 54, 92)
+  ctx.bezierCurveTo(52, 122, 12, 122, 10, 92)
+  ctx.bezierCurveTo(8, 68, 20, 40, 32, 4)
+  ctx.closePath()
+  const g = ctx.createRadialGradient(32, 94, 0, 32, 80, 64)
+  g.addColorStop(0, 'rgba(255,255,240,1)')
+  g.addColorStop(0.22, 'rgba(255,232,150,1)')
+  g.addColorStop(0.5, 'rgba(255,160,50,0.75)')
+  g.addColorStop(1, 'rgba(255,90,10,0)')
+  ctx.fillStyle = g
+  ctx.fill()
+  llama = aTextura(c)
+  return llama
+}
+
 // ───────────────────────────── Claraboya ─────────────────────────────
 
 /** Claraboya con cristales separados por perfiles (`columnas` × `filas`). */

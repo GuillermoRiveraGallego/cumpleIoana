@@ -1,4 +1,4 @@
-import { SALA, VESTIBULO, temaDeSala, type Tema } from '../config'
+import { CUMPLE, SALA, VESTIBULO, temaDeSala, type Tema } from '../config'
 import type { Foto, Sala } from '../galeria/datos'
 import { caja, transformarCaja, type Caja } from './colisiones'
 
@@ -17,8 +17,10 @@ export type V3 = [number, number, number]
  *         └────────┘ │  Vestíbulo   │ └────────┘
  *         ┌────────┐ │      ♥       │ ┌────────┐
  *         │ Sala 1 ├─┤              ├─┤ Sala 5 │
- *         └────────┘ └──── ▲ ───────┘ └────────┘
- *                         entrada
+ *         └────────┘ └───── ▲ ──────┘ └────────┘
+ *                       ┌──┘  └──┐
+ *                       │ Fiesta │   ← sala del cumpleaños, tras la puerta principal (siempre abierta)
+ *                       └────────┘
  *
  * Cada sala tiene la puerta en su +Z local; `giro` (cuartos de vuelta) la orienta hacia el vestíbulo.
  * Las salas crecen hacia fuera según su número de fotos, así que nunca chocan entre sí.
@@ -59,8 +61,19 @@ export interface ParedVestibulo {
   puertas: { x: number; sala: Sala }[]
 }
 
+/** Sala del cumpleaños (coordenadas locales como una sala: puerta en +Z, fondo en −Z). */
+export interface EspacioFiesta {
+  posicion: V3
+  giro: number
+  ancho: number
+  fondo: number
+  limites: Caja
+  portal: Caja
+}
+
 export interface Disposicion {
   salas: EspacioSala[]
+  fiesta: EspacioFiesta | null
   vestibulo: { ancho: number; largo: number; limites: Caja; paredes: ParedVestibulo[] }
   inicio: { posicion: V3; rotacionY: number }
 }
@@ -195,8 +208,29 @@ export function calcularDisposicion(salas: Sala[]): Disposicion {
     }
   })
 
+  // La sala del cumpleaños, detrás de la pared de la entrada (sur), con la puerta en su centro.
+  let fiesta: EspacioFiesta | null = null
+  if (CUMPLE.activa) {
+    const { ancho: WF, fondo: DF } = CUMPLE
+    const posicion: V3 = [0, 0, L / 2 + 2 * T + DF / 2]
+    const giro = paredes.sur.giro
+    fiesta = {
+      posicion,
+      giro,
+      ancho: WF,
+      fondo: DF,
+      limites: transformarCaja(
+        { minX: -WF / 2, maxX: WF / 2, minY: -1, maxY: H + 1, minZ: -DF / 2, maxZ: DF / 2 + T },
+        posicion,
+        giro,
+      ),
+      portal: transformarCaja(caja(0, HP / 2, DF / 2 + T, P, HP, 2 * T), posicion, giro),
+    }
+  }
+
   return {
     salas: espacios,
+    fiesta,
     vestibulo: {
       ancho: V,
       largo: L,

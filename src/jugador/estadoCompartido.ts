@@ -17,4 +17,6 @@ export const camara = {
   pitch: CAMARA.pitchInicial,
   distancia: CAMARA.distancia,
   distanciaActual: CAMARA.distancia,
+  /** Cuánto por encima del punto de órbita mira la cámara (se baja al soplar las velas, para ver la tarta). */
+  alturaMirada: CAMARA.alturaMirada,
 }

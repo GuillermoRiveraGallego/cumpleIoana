@@ -15,6 +15,7 @@ import { Interaccion } from './mundo/Interaccion'
 import { Museo } from './mundo/Museo'
 import { Hud } from './ui/Hud'
 import { Intro } from './ui/Intro'
+import { Soplar } from './ui/Soplar'
 import { Visor } from './ui/Visor'
 
 function Escena({ salas }: { salas: DatosSala[] }) {
@@ -71,6 +72,7 @@ export default function App() {
       </Canvas>
       <CapaControles />
       <Hud />
+      <Soplar />
       <Visor />
       <Intro />
     </div>

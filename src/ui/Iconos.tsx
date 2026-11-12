@@ -53,3 +53,22 @@ export const IconoCorazon = () => (
     <path d="M12 20.5s-7.5-4.6-9.3-9.2C1.5 8.1 3.6 4.5 7.2 4.5c2 0 3.6 1.1 4.8 2.8 1.2-1.7 2.8-2.8 4.8-2.8 3.6 0 5.7 3.6 4.5 6.8-1.8 4.6-9.3 9.2-9.3 9.2z" />
   </svg>
 )
+export const IconoTarta = () => (
+  <svg {...base}>
+    <path d="M3.5 21h17M5 21v-6.5a1.5 1.5 0 011.5-1.5h11a1.5 1.5 0 011.5 1.5V21" />
+    <path d="M5 16.6c1.2 0 1.6-1.1 2.8-1.1s1.6 1.1 2.8 1.1 1.6-1.1 2.8-1.1 1.6 1.1 2.8 1.1 1.6-1.1 2.8-1.1" />
+    <path d="M12 13V9.5" />
+    <path d="M12 7c1-.8 1-2 0-3.3-1 1.3-1 2.5 0 3.3z" fill="currentColor" />
+  </svg>
+)
+export const IconoMicro = () => (
+  <svg {...base}>
+    <rect x="9" y="3" width="6" height="11" rx="3" />
+    <path d="M5.5 11a6.5 6.5 0 0013 0M12 17.5V21M8.5 21h7" />
+  </svg>
+)
+export const IconoViento = () => (
+  <svg {...base}>
+    <path d="M3 8h10a3 3 0 10-3-3M3 12h15a3 3 0 11-3 3M3 16h7" />
+  </svg>
+)

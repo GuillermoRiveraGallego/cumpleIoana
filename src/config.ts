@@ -57,6 +57,26 @@ export const SALA = {
 }
 
 /**
+ * Sala del cumpleaños: detrás de la puerta principal (siempre abierta). Tarta con velas que se apagan
+ * soplando al micrófono del móvil (o manteniendo pulsado un botón), y confeti al apagarlas todas.
+ */
+export const CUMPLE = {
+  activa: true,
+  nombre: 'Ioana',
+  velas: 10,
+  titulo: '¡Feliz cumpleaños!',
+  subtitulo: 'Pide un deseo, Ioana',
+  /** Se lee debajo de «¡Feliz cumpleaños, Ioana!» al apagar las velas. */
+  felicitacion: 'Que se cumpla tu deseo',
+  ancho: 10,
+  fondo: 10,
+  /** Nivel (dB) de graves a partir del que cuenta como soplido. Más bajo = más sensible. */
+  umbralSoplidoDb: -30,
+  /** A qué distancia de la tarta aparece el botón «Soplar las velas» (m). */
+  distanciaTarta: 2.3,
+}
+
+/**
  * Vestíbulo: una galería con las salas a los lados y una al fondo. Su largo crece con el número de salas.
  */
 export const VESTIBULO = {

@@ -35,7 +35,7 @@ aparece **«Soplar las velas»** (o pulsa E, o toca la tarta):
 
 1. Sale el panel «Pide un deseo…». Con **«Soplar al micrófono»**, el navegador pide permiso para usar el micro y
    basta con soplar al móvil. Cada vela aguanta un poco distinto, así que un soplido corto apaga solo algunas.
-   El medidor muestra la fuerza del soplido y la raya marca a partir de dónde cuenta.
+   El medidor muestra la fuerza del soplido: a partir de la raya de la mitad, cuenta como soplido.
 2. Sin micrófono (o si no da permiso), se sopla **manteniendo pulsado** el botón, o la barra espaciadora en el
    ordenador.
 3. Al apagarlas todas cae confeti, sale «¡Feliz cumpleaños, Ioana!» y, al rato, se pueden volver a encender.
@@ -44,8 +44,8 @@ El micrófono solo funciona con **HTTPS** (GitHub Pages lo es) o en `localhost`.
 móvil por la IP de la wifi (`http://192.168…`), el navegador no deja usar el micro y solo sale el botón.
 
 Se ajusta en `CUMPLE`, en `src/config.ts`: el nombre, el **número de velas** (hasta 36), los textos del rótulo y de
-la felicitación, y `umbralSoplidoDb` (bájalo, p. ej. a −36, si cuesta apagarlas; súbelo si se apagan solas al
-hablar). Con `activa: false` vuelve la puerta principal cerrada y desaparece la sala.
+la felicitación, y `umbralSoplidoDb` (bájalo, p. ej. a −62, si cuesta apagarlas; súbelo, p. ej. a −50, si se
+apagan solas al hablar). Con `activa: false` vuelve la puerta principal cerrada y desaparece la sala.
 
 ## Arrancar
 

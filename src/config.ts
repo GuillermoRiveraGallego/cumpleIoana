@@ -70,8 +70,11 @@ export const CUMPLE = {
   felicitacion: 'Que se cumpla tu deseo',
   ancho: 10,
   fondo: 10,
-  /** Nivel (dB) de graves a partir del que cuenta como soplido. Más bajo = más sensible. */
-  umbralSoplidoDb: -30,
+  /**
+   * Nivel (dB) de graves a partir del que cuenta como soplido (la raya de la mitad del medidor).
+   * Más bajo = más sensible. Si se apagan solas al hablar, súbelo (p. ej. −50).
+   */
+  umbralSoplidoDb: -56,
   /** A qué distancia de la tarta aparece el botón «Soplar las velas» (m). */
   distanciaTarta: 2.3,
 }

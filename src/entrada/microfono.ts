@@ -14,18 +14,16 @@ export const soplido = {
   fuerza: 0,
   /** 0..1: nivel de graves del micro, para el medidor (aunque no llegue al umbral). */
   nivel: 0,
-  /** 0..1: posición del umbral en el medidor. */
-  umbral: 0,
+  /** 0..1: posición del umbral en el medidor (siempre en la mitad: de ahí en adelante, sopla). */
+  umbral: 0.5,
   /** Botón «mantén pulsado para soplar» o barra espaciadora. */
   boton: false,
   /** Velas que siguen encendidas (lo escribe la tarta, lo lee la interfaz). */
   quedan: 0,
 }
 
-// Rango del medidor (dB).
-const DB_MIN = -90
-const DB_MAX = -10
-const aMedidor = (db: number) => clamp((db - DB_MIN) / (DB_MAX - DB_MIN), 0, 1)
+/** El medidor abarca ±24 dB alrededor del umbral, que queda justo en la mitad de la barra. */
+const MEDIA_BARRA_DB = 24
 
 type ConstructorAudio = typeof AudioContext
 
@@ -116,10 +114,9 @@ export function actualizarSoplido(dt: number) {
     } else {
       sueloDb = damp(sueloDb, db, db < sueloDb ? 4 : 0.5, dt)
     }
-    const umbral = Math.max(CUMPLE.umbralSoplidoDb, sueloDb + 15)
-    micro = clamp((db - umbral) / 12, 0, 1)
-    soplido.nivel = aMedidor(db)
-    soplido.umbral = aMedidor(umbral)
+    const umbral = Math.max(CUMPLE.umbralSoplidoDb, sueloDb + 10)
+    micro = clamp((db - umbral) / 8, 0, 1)
+    soplido.nivel = clamp(0.5 + (db - umbral) / (2 * MEDIA_BARRA_DB), 0, 1)
   }
   const objetivo = Math.max(micro, soplido.boton ? 1 : 0)
   soplido.fuerza = damp(soplido.fuerza, objetivo, objetivo > soplido.fuerza ? 20 : 8, dt)
